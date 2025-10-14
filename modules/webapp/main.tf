@@ -3,10 +3,10 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# Trecho que permite a utilização de Terragrunt
-terraform {
-  backend "s3" {}
-}
+# Trecho que permite a utilização de Terragrunt com S3
+# terraform {
+#   backend "s3" {}
+# }
 
 # Tag Padrão
 locals {
@@ -53,7 +53,7 @@ resource "aws_subnet" "private_b" {
   tags              = merge(local.common_tags, { Name = "ws-private-subnet-b" })
 }
 
-# --- Conectividade com a Internet ---
+# Gateway
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
   tags   = merge(local.common_tags, { Name = "ws-igw" })
@@ -190,13 +190,14 @@ resource "aws_launch_template" "main" {
   image_id      = "ami-052064a798f08f0d3"
   instance_type = "t3.micro"
   vpc_security_group_ids = [aws_security_group.web_sg.id]
-  user_data = <<-EOF
+  user_data = base64encode(<<-EOF
           #!/bin/bash
           sudo dnf update -y
           sudo dnf install -y nginx
           sudo systemctl start nginx
           sudo systemctl enable nginx
           EOF
+          )
   tags = local.common_tags
 }
 
